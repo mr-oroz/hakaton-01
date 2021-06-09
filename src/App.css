@@ -10,3 +10,15 @@
   margin-left: 20px;
   margin-top: 20px;
 }
+.discount{
+  position: absolute;
+  bottom: 20px;
+  right: 8px;
+  background-color: crimson;
+  color: #fff;
+  padding: 5px;
+  text-align: center;
+}
+.list-line {
+  text-decoration: line-through;
+}
