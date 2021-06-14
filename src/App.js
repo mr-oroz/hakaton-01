@@ -1,38 +1,112 @@
+import './App.css';
 import React from 'react';
-import './App.css'
-import Header from './components/Header';
 import PRODUCTS from './products.json';
-import Product from './pages/Product'
-import CATEGORIES from './categories'
-
+import CATEGORIES from './categories';
+import {Button, Container, Form, FormControl, Nav, Navbar, NavDropdown} from "react-bootstrap";
+import Product from "./pages/Product";
 
 class App extends React.Component {
   constructor(props) {
-    super(props)
+    super(props);
+
     this.state = {
-      cart: PRODUCTS,
-      categories: CATEGORIES,
+      active_menu: 'home',
+      menu_payload: null,
+      products: PRODUCTS,
+      search_query: '',
+    };
+  }
+
+  setProducts = () => {
+    let products = [];
+    if (this.state.active_menu === 'home') {
+      products = PRODUCTS;
+    } else if (this.state.active_menu === 'discounts') {
+      products = PRODUCTS.filter((v) => {
+        return v.discount !== null;
+      });
+    } else if (this.state.active_menu === 'category') {
+      products = PRODUCTS.filter((v) => {
+        return v.category_id === this.state.menu_payload;
+      });
+    } else if (this.state.active_menu === 'search') {
+      products = PRODUCTS.filter((v) => {
+        return v.title.toLowerCase().indexOf(this.state.menu_payload.toLowerCase()) > -1;
+      });
+    }
+    this.setState({products: products});
+  };
+
+  componentDidUpdate(prevProps, prevState, snapshot) {
+    if (prevState.active_menu !== this.state.active_menu || this.state.menu_payload !== prevState.menu_payload) {
+      this.setProducts();
     }
   }
-  handleClick = (id) => {
-    const cart = PRODUCTS.filter(v => v.category_id === id);
+
+  setActiveMenu = (menu, payload = null) => {
     this.setState({
-      cart
-    })
-  }
-  handleClickDisCount = (id) => {
-    const cart = PRODUCTS.filter(v => v.discount !== id);
-    this.setState({
-      cart
-    })
-  }
+      active_menu: menu,
+      menu_payload: payload,
+      search_query: '',
+    });
+  };
+
+  getTitle = () => {
+    if (this.state.active_menu === 'discounts') {
+      return 'Скидки';
+    } else if (this.state.active_menu === 'category') {
+      return CATEGORIES.find((v) => {
+        return v.id === this.state.menu_payload;
+      }).title;
+    } else if (this.state.active_menu === 'search') {
+      return `Результаты поиска: ${this.state.menu_payload}`;
+    }
+  };
+
+  search = () => {
+    this.setState((prev) => {
+      return {
+        active_menu: 'search',
+        menu_payload: prev.search_query,
+      };
+    });
+  };
+
   render() {
-    console.log(this.state.categories)
     return (
-      <div className={'App'}>
-        <Header handleClickDisCoun={(v) => this.handleClickDisCount} handleClick={(v) => this.handleClick(v)} Categories={this.state.categories} />
-        <Product cart={this.state.cart} Categories={this.state.categories} />
-      </div>
+      <>
+        <Navbar bg="dark" expand="lg" variant={'dark'}>
+          <Navbar.Brand href="#" onClick={() => this.setActiveMenu('home')}>ProMarket</Navbar.Brand>
+          <Navbar.Toggle aria-controls="basic-navbar-nav" />
+          <Navbar.Collapse id="basic-navbar-nav">
+            <Nav className="mr-auto">
+              <Nav.Link href="#" active={this.state.active_menu === 'home'} onClick={() => this.setActiveMenu('home')}>Главная</Nav.Link>
+              <Nav.Link href="#" active={this.state.active_menu === 'discounts'} onClick={() => this.setActiveMenu('discounts')}>Скидки</Nav.Link>
+              <NavDropdown title="Категории" id="basic-nav-dropdown">
+                {CATEGORIES.map((v) => {
+                  return (
+                    <NavDropdown.Item onClick={() => this.setActiveMenu('category', v.id)}>{v.short_title}</NavDropdown.Item>
+                  );
+                })}
+              </NavDropdown>
+            </Nav>
+            <Form inline>
+              <FormControl
+                value={this.state.search_query}
+                onChange={(e) => this.setState({search_query: e.target.value})}
+                type="text"
+                placeholder="Что ищете?"
+                className="mr-sm-2"
+              />
+              <Button onClick={() => this.search()} variant="success">Найти</Button>
+            </Form>
+          </Navbar.Collapse>
+        </Navbar>
+        <Container>
+          {this.active_menu !== 'home' ? <h2 className={'text-muted my-3'}>{this.getTitle()}</h2> : null}
+          <Product data={this.state.products} />
+        </Container>
+      </>
     );
   }
 }
